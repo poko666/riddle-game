@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>腦筋急轉彎小遊戲 🎮</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#00796b" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+
+  <meta name="description" content="國小生友善的中文腦筋急轉彎小遊戲：語音作答、提示機制、計分與離線支援（PWA）。" />
+
+  <style>
+    :root {
+      --brand: #00796b;
+      --brand-dark: #004d40;
+      --bg1: #f9f9f9;
+      --bg2: #e0f7fa;
+      --ok: #c8e6c9;
+      --bad: #ffcdd2;
+      --text: #123;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, "Microsoft JhengHei", "Noto Sans TC", Arial, sans-serif;
+      margin: 0;
+      color: var(--text);
+      background: linear-gradient(to right, var(--bg1), var(--bg2));
+      -webkit-tap-highlight-color: transparent;
+    }
+    header {
+      padding: 16px 20px 0;
+      text-align: center;
+    }
+    h1 { margin: 0 0 8px; color: var(--brand); font-size: clamp(20px, 2.8vw + 14px, 28px); }
+    .sub { font-size: 14px; opacity: .7; margin-bottom: 12px; }
+
+    .container {
+      max-width: 820px; margin: 0 auto; padding: 12px 16px 28px;
+    }
+
+    #gameCard {
+      background: #fff;
+      border-radius: 20px;
+      padding: clamp(14px, 2.5vw + 8px, 28px);
+      margin: 10px auto 14px;
+      min-height: 120px;
+      box-shadow: 0 8px 18px rgba(0,0,0,.15);
+      font-size: clamp(18px, 2.2vw + 12px, 24px);
+      display: flex; align-items: center; justify-content: center;
+      text-align: center;
+      transition: transform .4s, background .25s;
+    }
+    #gameCard.correct { background: var(--ok); transform: scale(1.03); }
+    #gameCard.wrong   { background: var(--bad); transform: scale(.97); }
+
+    .bar {
+      width: 100%; height: 20px; background: #ddd; border-radius: 999px;
+      overflow: hidden; margin: 10px 0;
+    }
+    #scoreProgress { height: 100%; width: 0%; background: var(--brand); transition: width .5s; }
+
+    .hud {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 8px; flex-wrap: wrap;
+      font-size: 16px; margin: 8px 0 4px;
+    }
+    .hint { margin: 8px 0 0; font-size: 16px; color: #555; min-height: 20px; }
+
+    .cta {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 10px; margin-top: 12px;
+    }
+    .cta button, .row button {
+      padding: 14px; font-size: 18px; border: none; border-radius: 12px;
+      background: var(--brand); color: #fff; cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,.12);
+      transition: transform .08s ease, background .25s ease;
+      touch-action: manipulation;
+    }
+    .cta button:active, .row button:active { transform: translateY(1px); background: var(--brand-dark); }
+
+    .row { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-top: 8px; }
+    input[type="text"] {
+      width: 100%; padding: 14px; font-size: 18px; border-radius: 12px;
+      border: 1px solid #c9d4d9; background: #fff;
+    }
+
+    /* 安裝提示區 */
+    .install {
+      margin-top: 12px; display: none; text-align: center;
+    }
+    .install button { padding: 12px 16px; font-size: 16px; }
+
+    footer {
+      text-align: center; font-size: 12px; opacity: .6; padding: 16px 0 26px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🎉 腦筋急轉彎小遊戲</h1>
+    <div class="sub">語音作答・3 次提示・計分・可安裝 (PWA)</div>
+  </header>
+
+  <main class="container" aria-live="polite">
+    <div id="gameCard">點「開始」後，題目會唸出來喔！</div>
+
+    <div class="hud">
+      <div id="score">分數：0</div>
+      <div id="hints">提示剩餘：3</div>
+    </div>
+    <div class="bar" aria-hidden="true"><div id="scoreProgress"></div></div>
+    <div id="hint" class="hint"></div>
+
+    <!-- 手機/平板輸入備援（iOS Safari 無語音辨識時使用） -->
+    <div class="row">
+      <input id="answerInput" type="text" inputmode="search" placeholder="請在此輸入答案或點下方『語音作答』" />
+      <button id="btnSubmit">送出</button>
+    </div>
+
+    <div class="cta">
+      <button id="btnStart">開始</button>
+      <button id="btnHint">提示</button>
+      <button id="btnGiveup">放棄</button>
+      <button id="btnVoice">🎤 語音作答</button>
+    </div>
+
+    <!-- PWA 安裝提示 -->
+    <div class="install" id="installBox">
+      <p>想要像 App 一樣安裝在手機主畫面嗎？</p>
+      <button id="btnInstall">安裝到主畫面</button>
+    </div>
+
+    <!-- 音效 -->
+    <audio id="soundCorrect" preload="auto" src="https://actions.google.com/sounds/v1/crowds/cheer.ogg"></audio>
+    <audio id="soundWrong"   preload="auto" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+  </main>
+
+  <footer>© 2025 Riddle Game · 支援 Android/Chrome 語音作答；iOS 可用鍵盤輸入</footer>
+
+  <script>
+    // ===== 題庫（可自行擴充） =====
+    let riddles = [];
+    // 載入題庫
+    async function loadRiddles() {
+        try {
+        const res = await fetch("riddles.json");
+        riddles = await res.json();
+        console.log("📥 題庫載入完成，共", riddles.length, "題");
+        } catch (err) {
+        console.error("❌ 無法載入題庫", err);
+        }
+    }
+
+    // 載入完成後再啟動遊戲
+    loadRiddles().then(() => {
+        updateHUD();
+        // 可以在這裡自動呼叫 startGame() 或等待玩家點「開始」
+    });
+
+    // ===== 狀態 =====
+    let score = 0;
+    let hintLimit = 3;
+    let currentIndex = 0;
+    let usedHint = false;
+
+    // ===== DOM =====
+    const $card = document.getElementById("gameCard");
+    const $score = document.getElementById("score");
+    const $hints = document.getElementById("hints");
+    const $hint = document.getElementById("hint");
+    const $progress = document.getElementById("scoreProgress");
+    const $input = document.getElementById("answerInput");
+
+    const $btnStart  = document.getElementById("btnStart");
+    const $btnHint   = document.getElementById("btnHint");
+    const $btnGiveup = document.getElementById("btnGiveup");
+    const $btnVoice  = document.getElementById("btnVoice");
+    const $btnSubmit = document.getElementById("btnSubmit");
+
+    const sOK  = document.getElementById("soundCorrect");
+    const sBad = document.getElementById("soundWrong");
+
+    // ===== 工具 =====
+    function shuffle(arr){ for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];} }
+    function speak(text){
+      try {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = "zh-TW";
+        window.speechSynthesis.cancel(); // 避免累積
+        window.speechSynthesis.speak(u);
+      } catch(e) {}
+    }
+    function updateHUD(){
+      $score.textContent = `分數：${score}`;
+      $hints.textContent = `提示剩餘：${hintLimit}`;
+      const progress = Math.round((score / (riddles.length * 10)) * 100);
+      $progress.style.width = progress + "%";
+    }
+    function showQuestion(){
+      usedHint = false;
+      $hint.textContent = "";
+      $input.value = "";
+      $card.className = "";
+      if(currentIndex < riddles.length){
+        const q = riddles[currentIndex].q;
+        $card.textContent = "題目：" + q;
+        speak("題目：" + q);
+        $input.focus();
+      } else {
+        $card.textContent = `🎉 遊戲結束！你的總分是 ${score} 分`;
+        speak(`遊戲結束！你的總分是 ${score} 分`);
+      }
+    }
+
+    // ===== 互動 =====
+    function startGame(){
+      score = 0; hintLimit = 3; currentIndex = 0;
+      shuffle(riddles);
+      updateHUD(); showQuestion();
+    }
+    function useHint(){
+      if(currentIndex >= riddles.length) return;
+      if(hintLimit > 0 && !usedHint){
+        $hint.textContent = "💡 提示：" + riddles[currentIndex].hint;
+        speak("提示：" + riddles[currentIndex].hint);
+        hintLimit--; usedHint = true; updateHUD();
+      } else if(usedHint){
+        speak("這題已經用過提示了！");
+      } else {
+        speak("提示次數已經用完了！");
+      }
+    }
+    function giveUp(){
+      if(currentIndex >= riddles.length) return;
+      speak("正確答案是：" + riddles[currentIndex].a);
+      currentIndex++; showQuestion();
+    }
+    function checkAnswer(ans){
+      if(currentIndex >= riddles.length) return;
+      const a = riddles[currentIndex].a;
+      if(!ans) return;
+      if(ans.trim().includes(a)){
+        speak("答對了！加十分！");
+        try { sOK.currentTime = 0; sOK.play(); } catch(e) {}
+        score += 10; $card.className = "correct";
+        updateHUD();
+        setTimeout(()=>{ currentIndex++; showQuestion(); }, 900);
+      } else {
+        speak("答錯了，再試一次！");
+        try { sBad.currentTime = 0; sBad.play(); } catch(e) {}
+        $card.className = "wrong";
+        setTimeout(()=>{ $card.className = ""; }, 700);
+      }
+    }
+    // 送出（鍵盤 Enter）
+    $input.addEventListener("keydown", (e)=>{ if(e.key === "Enter"){ checkAnswer($input.value); }});
+
+    // 語音
+    function startListening(){
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if(!SR){ alert("⚠️ 你的瀏覽器不支援語音辨識，請使用鍵盤輸入答案。"); return; }
+      const r = new SR();
+      r.lang = "zh-TW"; r.interimResults = false; r.maxAlternatives = 1;
+      r.onresult = (ev)=>{ const text = ev.results[0][0].transcript; checkAnswer(text); };
+      r.onerror = ()=>{ alert("語音辨識失敗，請再試一次或改用輸入框。"); };
+      r.start();
+    }
+
+    // 綁定
+    $btnStart.addEventListener("click", startGame);
+    $btnHint.addEventListener("click", useHint);
+    $btnGiveup.addEventListener("click", giveUp);
+    $btnVoice.addEventListener("click", startListening);
+    $btnSubmit.addEventListener("click", ()=>checkAnswer($input.value));
+
+    // 初始
+    updateHUD();
+
+    // ===== PWA：Service Worker 註冊 =====
+    if("serviceWorker" in navigator){
+      navigator.serviceWorker.register("service-worker.js")
+        .then(()=>console.log("SW registered"))
+        .catch(err=>console.warn("SW register failed", err));
+    }
+
+    // ===== PWA：安裝流程（beforeinstallprompt）=====
+    let deferredPrompt = null;
+    const $installBox = document.getElementById("installBox");
+    const $btnInstall = document.getElementById("btnInstall");
+
+    window.addEventListener("beforeinstallprompt", (e)=>{
+      e.preventDefault();            // 攔截預設小條
+      deferredPrompt = e;
+      $installBox.style.display = "block";
+    });
+
+    $btnInstall.addEventListener("click", async ()=>{
+      if(!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log("Install choice:", outcome);
+      deferredPrompt = null;
+      $installBox.style.display = "none";
+    });
+
+    // iOS Safari：顯示提示（無 beforeinstallprompt）
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isInStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
+    if(isIOS && !isInStandalone){
+      // 簡單文字提示（可自行美化成教學圖）
+      $installBox.style.display = "block";
+      $installBox.querySelector("p").textContent = "在 Safari 以「分享」→ 加到主畫面，即可像 App 使用。";
+      $installBox.querySelector("button").style.display = "none";
+    }
+  </script>
+</body>
+</html>

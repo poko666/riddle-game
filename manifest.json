@@ -1,0 +1,22 @@
+{
+  "name": "腦筋急轉彎小遊戲",
+  "short_name": "急轉彎遊戲",
+  "description": "國小生友善的中文腦筋急轉彎小遊戲：語音作答、提示機制、計分與離線支援（PWA）。",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#00796b",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
