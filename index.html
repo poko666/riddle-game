@@ -19,7 +19,7 @@
     }
     #gameCard.correct { background: #c8e6c9; transform: scale(1.05); }
     #gameCard.wrong { background: #ffcdd2; transform: scale(0.95); }
-    #score, #hints, #lives { margin: 8px; font-weight: bold; }
+    #score, #hints, #lives, #progressText { margin: 8px; font-weight: bold; }
     .bar { width: 80%; height: 20px; margin: 10px auto; background: #ddd; border-radius: 10px; overflow: hidden; }
     #scoreProgress { height: 100%; width: 0%; background: #00796b; transition: width .5s; }
     input { padding: 10px; font-size: 16px; width: 60%; border-radius: 8px; border: 1px solid #ccc; }
@@ -41,6 +41,7 @@
   <div id="score">本次分數：0</div>
   <div id="hints">提示剩餘：3</div>
   <div id="lives">生命：❤️❤️❤️</div>
+  <div id="progressText">題目進度：0/0</div>
 
   <div class="bar"><div id="scoreProgress"></div></div>
   <div id="hint"></div>
@@ -65,7 +66,8 @@
   </div>
 
   <script>
-    let riddles = [];
+    let allRiddles = []; // 完整題庫
+    let riddles = [];    // 當局題庫
     let score = 0, wrongCount = 0, hintLimit = 3, currentIndex = 0, usedHint = false;
     const maxLives = 3;
 
@@ -79,11 +81,24 @@
     const $input = document.getElementById("answerInput");
     const $lives = document.getElementById("lives");
     const $rankList = document.getElementById("rankList");
+    const $progressText = document.getElementById("progressText");
     const sOK = document.getElementById("soundCorrect");
     const sBad = document.getElementById("soundWrong");
 
-    function shuffle(arr){ for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];} }
-    function speak(text){ try{ let u=new SpeechSynthesisUtterance(text); u.lang="zh-TW"; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch(e){} }
+    function shuffle(arr){ 
+      for(let i=arr.length-1;i>0;i--){ 
+        const j=Math.floor(Math.random()*(i+1)); 
+        [arr[i],arr[j]]=[arr[j],arr[i]]; 
+      } 
+    }
+    function speak(text){ 
+      try{ 
+        let u=new SpeechSynthesisUtterance(text); 
+        u.lang="zh-TW"; 
+        speechSynthesis.cancel(); 
+        speechSynthesis.speak(u);
+      }catch(e){} 
+    }
 
     function updateHUD(){
       $score.textContent = `本次分數：${score}`;
@@ -94,6 +109,9 @@
       for(let i=0; i<maxLives-wrongCount; i++){ hearts += "❤️"; }
       for(let i=0; i<wrongCount; i++){ hearts += "🖤"; }
       $lives.textContent = "生命：" + hearts;
+
+      // 題目進度
+      $progressText.textContent = `題目進度：${Math.min(currentIndex+1, riddles.length)}/${riddles.length}`;
     }
 
     function updateLeaderboard() {
@@ -107,13 +125,16 @@
 
     async function loadRiddles() {
       const res = await fetch("riddles.json");
-      riddles = await res.json();
+      allRiddles = await res.json();
     }
 
     function startGame(){
       score = 0; wrongCount = 0; hintLimit = 3; currentIndex = 0;
+
+      riddles = [...allRiddles];
       shuffle(riddles);
-      riddles = riddles.slice(0, 10); // 每次隨機抽10題
+      riddles = riddles.slice(0, 10);
+
       updateHUD();
       showQuestion();
     }
@@ -128,6 +149,7 @@
         let q = riddles[currentIndex].q;
         $card.textContent = "題目：" + q;
         speak("題目：" + q);
+        updateHUD();
       } else {
         endGame();
       }
@@ -182,6 +204,8 @@
       speak(`遊戲結束，本次 ${score} 分`);
       updateHUD();
       updateLeaderboard();
+
+      $progressText.textContent = "題目進度：0/0";
 
       const replayBtn = document.createElement("button");
       replayBtn.textContent = "🔄 再玩一次";
