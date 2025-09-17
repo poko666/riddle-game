@@ -260,14 +260,29 @@
     $input.addEventListener("keydown", (e)=>{ if(e.key === "Enter"){ checkAnswer($input.value); }});
 
     // 語音
-    function startListening(){
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if(!SR){ alert("⚠️ 你的瀏覽器不支援語音辨識，請使用鍵盤輸入答案。"); return; }
-      const r = new SR();
-      r.lang = "zh-TW"; r.interimResults = false; r.maxAlternatives = 1;
-      r.onresult = (ev)=>{ const text = ev.results[0][0].transcript; checkAnswer(text); };
-      r.onerror = ()=>{ alert("語音辨識失敗，請再試一次或改用輸入框。"); };
-      r.start();
+    function startListening() {
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) {
+            alert("⚠️ 你的瀏覽器不支援語音辨識，請用輸入答案。");
+            return;
+        }
+        const r = new SR();
+        r.lang = "zh-TW";
+        r.continuous = true;       // 允許持續收音
+        r.interimResults = true;   // 中途結果
+
+        r.onresult = (ev) => {
+            let text = ev.results[ev.results.length - 1][0].transcript;
+            console.log("🎤 你說：", text);
+            document.getElementById("answerInput").value = text; // 先顯示
+        };
+
+        r.onerror = (e) => {
+            console.error("語音辨識錯誤", e);
+            alert("語音辨識失敗，請再試一次或改用輸入框");
+        };
+
+        r.start();
     }
 
     // 綁定
