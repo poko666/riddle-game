@@ -2,7 +2,7 @@ const CACHE_NAME = "riddle-game-v1";
 const urlsToCache = [
   "index.html",
   "manifest.json",
-  "riddles.json",
+  "riddles_multi_hints.json",
   "icon-192.png",
   "icon-512.png"
 ];

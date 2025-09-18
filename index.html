@@ -19,15 +19,16 @@
     }
     #gameCard.correct { background: #c8e6c9; transform: scale(1.05); }
     #gameCard.wrong { background: #ffcdd2; transform: scale(0.95); }
-    #score, #hints, #lives, #progressText { margin: 8px; font-weight: bold; }
+    #score, #lives, #progressText { margin: 8px; font-weight: bold; }
     .bar { width: 80%; height: 20px; margin: 10px auto; background: #ddd; border-radius: 10px; overflow: hidden; }
     #scoreProgress { height: 100%; width: 0%; background: #00796b; transition: width .5s; }
     input { padding: 10px; font-size: 16px; width: 60%; border-radius: 8px; border: 1px solid #ccc; }
-    button {
+    button, select {
       margin: 6px; padding: 12px 18px; font-size: 16px;
       border: none; border-radius: 8px; background: #00796b; color: white; cursor: pointer;
     }
     button:active { background: #004d40; }
+    select { background: #009688; }
     #hint { margin-top: 10px; font-size: 16px; color: #444; }
     #leaderboard { margin: 20px auto; width: 80%; background: #fff; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.1); padding: 10px; }
     #leaderboard h3 { margin: 5px; color: #00796b; }
@@ -39,7 +40,6 @@
   <div id="gameCard">點「開始」開始挑戰！</div>
 
   <div id="score">本次分數：0</div>
-  <div id="hints">提示剩餘：3</div>
   <div id="lives">生命：❤️❤️❤️</div>
   <div id="progressText">題目進度：0/0</div>
 
@@ -52,6 +52,13 @@
     <button id="btnVoice">🎤 語音作答</button>
   </div>
   <div>
+    <label for="levelSelect">難度：</label>
+    <select id="levelSelect">
+      <option value="all">全部</option>
+      <option value="簡單">簡單</option>
+      <option value="中等">中等</option>
+      <option value="困難">困難</option>
+    </select>
     <button id="btnStart">開始</button>
     <button id="btnHint">提示</button>
     <button id="btnGiveup">放棄</button>
@@ -68,14 +75,14 @@
   <script>
     let allRiddles = []; // 完整題庫
     let riddles = [];    // 當局題庫
-    let score = 0, wrongCount = 0, hintLimit = 3, currentIndex = 0, usedHint = false;
+    let score = 0, wrongCount = 0, currentIndex = 0;
+    let hintStep = 0; // 每題提示進度
     const maxLives = 3;
 
     let leaderboard = JSON.parse(localStorage.getItem("riddleLeaderboard")) || [];
 
     const $card = document.getElementById("gameCard");
     const $score = document.getElementById("score");
-    const $hints = document.getElementById("hints");
     const $hint = document.getElementById("hint");
     const $progress = document.getElementById("scoreProgress");
     const $input = document.getElementById("answerInput");
@@ -102,7 +109,6 @@
 
     function updateHUD(){
       $score.textContent = `本次分數：${score}`;
-      $hints.textContent = `提示剩餘：${hintLimit}`;
       $progress.style.width = (score/100)*100 + "%";
 
       let hearts = "";
@@ -110,7 +116,6 @@
       for(let i=0; i<wrongCount; i++){ hearts += "🖤"; }
       $lives.textContent = "生命：" + hearts;
 
-      // 題目進度
       $progressText.textContent = `題目進度：${Math.min(currentIndex+1, riddles.length)}/${riddles.length}`;
     }
 
@@ -129,9 +134,15 @@
     }
 
     function startGame(){
-      score = 0; wrongCount = 0; hintLimit = 3; currentIndex = 0;
+      score = 0; wrongCount = 0; currentIndex = 0;
 
-      riddles = [...allRiddles];
+      const selectedLevel = document.getElementById("levelSelect").value;
+      if(selectedLevel === "all"){
+        riddles = [...allRiddles];
+      } else {
+        riddles = allRiddles.filter(r => r.level === selectedLevel);
+      }
+
       shuffle(riddles);
       riddles = riddles.slice(0, 10);
 
@@ -140,15 +151,16 @@
     }
 
     function showQuestion(){
-      usedHint = false;
+      hintStep = 0; // reset hints
       $hint.textContent = "";
       $input.value = "";
       $card.className = "";
       if(wrongCount >= maxLives){ endGame(); return; }
       if(currentIndex < riddles.length){
         let q = riddles[currentIndex].q;
-        $card.textContent = "題目：" + q;
-        speak("題目：" + q);
+        let level = riddles[currentIndex].level || "未分類";
+        $card.textContent = `(${level}) 題目：${q}`;
+        speak(`題目：${q}，難度：${level}`);
         updateHUD();
       } else {
         endGame();
@@ -179,11 +191,15 @@
 
     function useHint(){
       if(currentIndex >= riddles.length) return;
-      if(hintLimit > 0 && !usedHint){
-        $hint.textContent = "💡 提示：" + riddles[currentIndex].hint;
-        speak("提示：" + riddles[currentIndex].hint);
-        hintLimit--; usedHint = true; updateHUD();
-      } else { speak("提示已經用完"); }
+      let hints = riddles[currentIndex].hints || [];
+      if(hintStep < hints.length){
+        $hint.textContent = "💡 提示：" + hints[hintStep];
+        speak("提示：" + hints[hintStep]);
+        hintStep++;
+      } else {
+        $hint.textContent = "💡 沒有更多提示了！";
+        speak("提示已經用完");
+      }
     }
 
     function giveUp(){
