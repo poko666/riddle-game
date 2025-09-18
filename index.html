@@ -7,33 +7,69 @@
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#00796b" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
+
   <style>
     body { font-family: "Microsoft JhengHei", Arial, sans-serif; background: #f0f9f9; margin: 0; text-align: center; }
-    h1 { color: #00796b; margin: 12px 0; }
+    h1 { color: #004d40; margin: 16px 0; }
+
+    /* 控制面板 */
     #controlPanel {
-      margin: 10px auto; padding: 10px; background: #e0f2f1;
-      border-radius: 10px; width: 90%; max-width: 500px;
+      margin: 10px auto; padding: 12px;
+      background: #e0f2f1; border-radius: 12px;
+      width: 90%; max-width: 500px;
+      display: flex; justify-content: center; align-items: center; gap: 10px;
     }
+    select, button {
+      padding: 10px 14px; font-size: 16px;
+      border-radius: 8px; border: none;
+    }
+    select { background: #009688; color: white; }
+    button { background: #00796b; color: white; cursor: pointer; }
+    button:active { background: #004d40; }
+
+    /* 題目卡片 */
     #gameCard {
-      margin: 20px auto; padding: 20px; width: 80%; min-height: 100px;
-      background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,.1);
-      font-size: 20px; display: flex; align-items: center; justify-content: center;
+      margin: 20px auto; padding: 30px; width: 90%; max-width: 600px;
+      min-height: 120px;
+      background: #fff; border-radius: 15px;
+      box-shadow: 0 6px 16px rgba(0,0,0,.15);
+      font-size: 22px; font-weight: bold;
+      display: flex; align-items: center; justify-content: center;
       transition: background .3s, transform .3s;
     }
     #gameCard.correct { background: #c8e6c9; transform: scale(1.05); }
     #gameCard.wrong { background: #ffcdd2; transform: scale(0.95); }
-    #score, #lives, #progressText { margin: 8px; font-weight: bold; }
-    .bar { width: 80%; height: 20px; margin: 10px auto; background: #ddd; border-radius: 10px; overflow: hidden; }
-    #scoreProgress { height: 100%; width: 0%; background: #00796b; transition: width .5s; }
-    input { padding: 10px; font-size: 16px; width: 60%; border-radius: 8px; border: 1px solid #ccc; }
-    button, select {
-      margin: 6px; padding: 10px 16px; font-size: 16px;
-      border: none; border-radius: 8px; background: #00796b; color: white; cursor: pointer;
+
+    /* 輸入區 */
+    #answerInput {
+      padding: 12px; font-size: 18px; width: 70%;
+      border-radius: 10px; border: 1px solid #ccc;
+      margin: 10px auto;
     }
-    button:active { background: #004d40; }
-    select { background: #009688; }
-    #hint { margin-top: 10px; font-size: 16px; color: #444; }
-    #leaderboard { margin: 20px auto; width: 80%; background: #fff; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.1); padding: 10px; }
+    #buttonRow {
+      display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin: 10px;
+    }
+
+    /* 狀態區 */
+    #statusPanel {
+      margin: 15px auto; width: 90%; max-width: 500px;
+      background: #ffffff; border-radius: 12px; padding: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.1);
+    }
+    #score, #lives, #progressText { margin: 6px; font-weight: bold; }
+    .bar { width: 80%; height: 20px; margin: 8px auto; background: #ddd; border-radius: 10px; overflow: hidden; }
+    #scoreProgress { height: 100%; width: 0%; background: #00796b; transition: width .5s; }
+
+    /* 提示 */
+    #hint { margin-top: 12px; font-size: 18px; color: #444; }
+
+    /* 排行榜 */
+    #leaderboard {
+      margin: 20px auto; width: 90%; max-width: 500px;
+      background: #fff; border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.1);
+      padding: 12px;
+    }
     #leaderboard h3 { margin: 5px; color: #00796b; }
     #rankList { text-align: left; margin: 0 auto; padding-left: 20px; }
   </style>
@@ -41,9 +77,9 @@
 <body>
   <h1>🎉 腦筋急轉彎小遊戲 🎉</h1>
 
-  <!-- ✅ 新增控制面板：難度 + 開始 -->
+  <!-- 控制面板 -->
   <div id="controlPanel">
-    <label for="levelSelect">選擇難度：</label>
+    <label for="levelSelect">難度：</label>
     <select id="levelSelect">
       <option value="all">全部</option>
       <option value="簡單">簡單</option>
@@ -56,23 +92,24 @@
   <!-- 題目卡片 -->
   <div id="gameCard">請先選擇難度並按「開始遊戲」！</div>
 
-  <!-- 遊戲狀態 -->
-  <div id="score">本次分數：0</div>
-  <div id="lives">生命：❤️❤️❤️</div>
-  <div id="progressText">題目進度：0/0</div>
-
-  <div class="bar"><div id="scoreProgress"></div></div>
-  <div id="hint"></div>
-
-  <!-- 答題輸入 -->
+  <!-- 輸入區 -->
   <input id="answerInput" type="text" placeholder="請輸入答案或語音" />
-  <div>
+  <div id="buttonRow">
     <button id="btnSubmit">送出</button>
     <button id="btnVoice">🎤 語音作答</button>
-  </div>
-  <div>
     <button id="btnHint">提示</button>
     <button id="btnGiveup">放棄</button>
+  </div>
+
+  <!-- 提示顯示 -->
+  <div id="hint"></div>
+
+  <!-- 狀態區 -->
+  <div id="statusPanel">
+    <div id="score">本次分數：0</div>
+    <div id="lives">生命：❤️❤️❤️</div>
+    <div id="progressText">題目進度：0/0</div>
+    <div class="bar"><div id="scoreProgress"></div></div>
   </div>
 
   <!-- 音效 -->
@@ -86,7 +123,193 @@
   </div>
 
   <script>
-    // （保留之前的遊戲邏輯，不需要修改，只是 UI 順序調整）
+    let allRiddles = []; // 完整題庫
+    let riddles = [];    // 當局題庫
+    let score = 0, wrongCount = 0, currentIndex = 0;
+    let hintStep = 0; // 每題提示進度
+    const maxLives = 3;
+
+    let leaderboard = JSON.parse(localStorage.getItem("riddleLeaderboard")) || [];
+
+    const $card = document.getElementById("gameCard");
+    const $score = document.getElementById("score");
+    const $hint = document.getElementById("hint");
+    const $progress = document.getElementById("scoreProgress");
+    const $input = document.getElementById("answerInput");
+    const $lives = document.getElementById("lives");
+    const $rankList = document.getElementById("rankList");
+    const $progressText = document.getElementById("progressText");
+    const sOK = document.getElementById("soundCorrect");
+    const sBad = document.getElementById("soundWrong");
+
+    function shuffle(arr){ 
+      for(let i=arr.length-1;i>0;i--){ 
+        const j=Math.floor(Math.random()*(i+1)); 
+        [arr[i],arr[j]]=[arr[j],arr[i]]; 
+      } 
+    }
+    function speak(text){ 
+      try{ 
+        let u=new SpeechSynthesisUtterance(text); 
+        u.lang="zh-TW"; 
+        speechSynthesis.cancel(); 
+        speechSynthesis.speak(u);
+      }catch(e){} 
+    }
+
+    function updateHUD(){
+      $score.textContent = `本次分數：${score}`;
+      $progress.style.width = (score/100)*100 + "%";
+
+      let hearts = "";
+      for(let i=0; i<maxLives-wrongCount; i++){ hearts += "❤️"; }
+      for(let i=0; i<wrongCount; i++){ hearts += "🖤"; }
+      $lives.textContent = "生命：" + hearts;
+
+      $progressText.textContent = `題目進度：${Math.min(currentIndex+1, riddles.length)}/${riddles.length}`;
+    }
+
+    function updateLeaderboard() {
+      $rankList.innerHTML = "";
+      leaderboard.forEach((s, i) => {
+        const li = document.createElement("li");
+        li.textContent = `${i+1}. ${s} 分`;
+        $rankList.appendChild(li);
+      });
+    }
+
+    async function loadRiddles() {
+      const res = await fetch("riddles_multi_hints.json");
+      allRiddles = await res.json();
+    }
+
+    function startGame(){
+      score = 0; wrongCount = 0; currentIndex = 0;
+
+      const selectedLevel = document.getElementById("levelSelect").value;
+      if(selectedLevel === "all"){
+        riddles = [...allRiddles];
+      } else {
+        riddles = allRiddles.filter(r => r.level === selectedLevel);
+      }
+
+      if(riddles.length === 0){
+        alert("⚠️ 這個難度沒有題目！");
+        return;
+      }
+
+      shuffle(riddles);
+      riddles = riddles.slice(0, 10);
+
+      updateHUD();
+      showQuestion();
+    }
+
+    function showQuestion(){
+      hintStep = 0;
+      $hint.textContent = "";
+      $input.value = "";
+      $card.className = "";
+      if(wrongCount >= maxLives){ endGame(); return; }
+      if(currentIndex < riddles.length){
+        let q = riddles[currentIndex].q;
+        let level = riddles[currentIndex].level || "未分類";
+        $card.textContent = `(${level}) 題目：${q}`;
+        // ✅ 語音只播題目
+        speak(`題目：${q}`);
+        updateHUD();
+      } else {
+        endGame();
+      }
+    }
+
+    function checkAnswer(ans){
+      if(currentIndex >= riddles.length) return;
+      const a = riddles[currentIndex].a;
+      ans = ans.trim();
+      if(ans.includes(a)){
+        speak("答對了！+10 分");
+        try { sOK.play(); } catch(e){}
+        score += 10;
+        $card.className = "correct";
+        updateHUD();
+        setTimeout(()=>{ currentIndex++; showQuestion(); }, 900);
+      } else {
+        speak("答錯了！");
+        try { sBad.play(); } catch(e){}
+        wrongCount++;
+        $card.className = "wrong";
+        updateHUD();
+        setTimeout(()=>{ $card.className = ""; }, 700);
+        if(wrongCount >= maxLives){ endGame(); }
+      }
+    }
+
+    function useHint(){
+      if(currentIndex >= riddles.length) return;
+      let hints = riddles[currentIndex].hints || [];
+      if(hintStep < hints.length){
+        $hint.textContent = `💡 提示 ${hintStep+1}/${hints.length}：` + hints[hintStep];
+        speak("提示：" + hints[hintStep]);
+        hintStep++;
+      } else {
+        $hint.textContent = "💡 沒有更多提示了！";
+        speak("提示已經用完");
+      }
+    }
+
+    function giveUp(){
+      if(currentIndex >= riddles.length) return;
+      speak("正確答案是：" + riddles[currentIndex].a);
+      currentIndex++; showQuestion();
+    }
+
+    function endGame(){
+      leaderboard.push(score);
+      leaderboard.sort((a,b)=>b-a);
+      leaderboard = leaderboard.slice(0,5);
+      localStorage.setItem("riddleLeaderboard", JSON.stringify(leaderboard));
+
+      $card.textContent = `❌ 遊戲結束！
+本次得分：${score} 分`;
+
+      speak(`遊戲結束，本次 ${score} 分`);
+      updateHUD();
+      updateLeaderboard();
+
+      $progressText.textContent = "題目進度：0/0";
+
+      const replayBtn = document.createElement("button");
+      replayBtn.textContent = "🔄 再玩一次";
+      replayBtn.style.marginTop = "15px";
+      replayBtn.onclick = () => {
+        replayBtn.remove();
+        startGame();
+      };
+      document.body.appendChild(replayBtn);
+    }
+
+    document.getElementById("btnStart").addEventListener("click", startGame);
+    document.getElementById("btnHint").addEventListener("click", useHint);
+    document.getElementById("btnGiveup").addEventListener("click", giveUp);
+    document.getElementById("btnSubmit").addEventListener("click", ()=>checkAnswer($input.value));
+
+    function startListening(){
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if(!SR){ alert("⚠️ 瀏覽器不支援語音辨識"); return; }
+      const r = new SR();
+      r.lang = "zh-TW";
+      r.continuous = true;
+      r.interimResults = true;
+      r.onresult = (ev)=>{
+        let text = ev.results[ev.results.length-1][0].transcript;
+        $input.value = text;
+      };
+      r.start();
+    }
+    document.getElementById("btnVoice").addEventListener("click", startListening);
+
+    loadRiddles().then(updateLeaderboard);
   </script>
 </body>
 </html>
