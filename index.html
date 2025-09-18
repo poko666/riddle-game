@@ -129,7 +129,7 @@
     }
 
     async function loadRiddles() {
-      const res = await fetch("riddles.json");
+      const res = await fetch("riddles_multi_hints.json");
       allRiddles = await res.json();
     }
 
@@ -141,6 +141,11 @@
         riddles = [...allRiddles];
       } else {
         riddles = allRiddles.filter(r => r.level === selectedLevel);
+      }
+
+      if(riddles.length === 0){
+        alert("⚠️ 這個難度沒有題目！");
+        return;
       }
 
       shuffle(riddles);
@@ -193,7 +198,7 @@
       if(currentIndex >= riddles.length) return;
       let hints = riddles[currentIndex].hints || [];
       if(hintStep < hints.length){
-        $hint.textContent = "💡 提示：" + hints[hintStep];
+        $hint.textContent = `💡 提示 ${hintStep+1}/${hints.length}：` + hints[hintStep];
         speak("提示：" + hints[hintStep]);
         hintStep++;
       } else {
